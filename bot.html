@@ -126,7 +126,35 @@
   .export{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer}
   .export:hover{border-color:var(--accent);color:var(--accent2)}
 
-  @media(max-width:980px){#chatView{grid-template-columns:1fr}aside{display:none}.msg{max-width:90%}.svc-grid{grid-template-columns:1fr}}
+  @media(max-width:980px){#chatView{grid-template-columns:1fr}aside{display:none}.msg{max-width:90%}.svc-grid{grid-template-columns:1fr}}  @media(max-width:760px){
+    html,body{width:100%;max-width:100%;overflow-x:hidden}
+    .chat,#chatView{min-width:0;max-width:100%}
+    .feed{min-width:0}
+    .msg{overflow-wrap:anywhere;word-break:break-word}
+    .brand{max-width:46%;min-width:0}
+    .brand > div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .tabs{flex:none}
+    .tab{padding:6px 10px;font-size:11.5px}
+    header{padding:9px 12px;gap:8px;flex-wrap:wrap}
+    .brand{font-size:14px;gap:8px}
+    .brand .mark{width:30px;height:30px;font-size:12px}
+    .brand small{display:none}
+    .hdr-right{display:none}
+    .tabs{margin-left:auto}
+    .tab{padding:7px 13px;font-size:12.5px}
+    .feed{padding:16px 14px}
+    .msg{max-width:94%;font-size:14px}
+    .chips{padding:0 14px 10px;gap:6px}
+    .chip{padding:8px 12px;font-size:12.5px}
+    .inbar{padding:10px 12px;gap:8px}
+    .inbar input{padding:12px 13px;font-size:14px;min-width:0}
+    .inbar button{padding:0 14px;font-size:13px}
+    .admin-top{padding:12px 14px}
+    .admin-top h2{font-size:17px;width:100%}
+    .search{min-width:0;flex:1}
+    .stats{padding:12px 14px;gap:16px}
+    .admin-list{padding:14px;grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
@@ -706,4 +734,7 @@ go('main');
 </script>
 </body>
 </html>
+
+
+
 
