@@ -1,0 +1,709 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G. A. Motors — ИИ-приёмщик v3 (корзина + админка)</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0c0f;--panel:#12161c;--panel2:#171c24;--line:rgba(255,255,255,.09);--text:#eef1f5;--muted:#98a2b3;--accent:#2f7cf6;--accent2:#61a3ff;--ok:#3ecf8e;--warn:#f0b429;--bad:#ff6b6b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Manrope',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit}
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 22px;border-bottom:1px solid var(--line);background:rgba(10,12,15,.94);flex:none}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800}
+  .mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(140deg,#2f7cf6,#12489c);display:grid;place-items:center;font-size:13px;font-weight:800}
+  .brand small{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .tabs{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:100px;padding:3px}
+  .tab{background:none;border:none;color:var(--muted);padding:8px 20px;border-radius:100px;font-size:13.5px;font-weight:700;cursor:pointer}
+  .tab.on{background:var(--accent);color:#fff}
+  .hdr-right{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--muted)}
+  .badge{border:1px solid rgba(62,207,142,.4);color:var(--ok);padding:5px 11px;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .phone{font-weight:700;color:var(--text)}
+
+  /* ---------- чат ---------- */
+  #chatView{flex:1;display:grid;grid-template-columns:1fr 390px;min-height:0}
+  .chat{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
+  .feed{flex:1;overflow-y:auto;padding:22px 26px;display:flex;flex-direction:column;gap:12px}
+  .feed::-webkit-scrollbar,.cart::-webkit-scrollbar,.leads::-webkit-scrollbar,.admin-list::-webkit-scrollbar{width:8px}
+  .feed::-webkit-scrollbar-thumb,.cart::-webkit-scrollbar-thumb,.leads::-webkit-scrollbar-thumb,.admin-list::-webkit-scrollbar-thumb{background:#222a34;border-radius:8px}
+  .msg{max-width:78%;padding:12px 16px;border-radius:14px;font-size:14.5px;line-height:1.55;white-space:pre-wrap}
+  .bot{background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:4px;align-self:flex-start}
+  .me{background:var(--accent);color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+  .sys{align-self:center;font-size:12px;color:var(--muted);border:1px dashed var(--line);padding:6px 14px;border-radius:100px}
+  .bot b{color:#fff}
+  .price-line{display:flex;justify-content:space-between;gap:18px;padding:6px 0;border-bottom:1px dotted rgba(255,255,255,.08)}
+  .price-line:last-child{border-bottom:none}
+  .price-line span:last-child{color:#fff;font-weight:700;white-space:nowrap}
+
+  .svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;max-width:660px}
+  .svc{display:flex;flex-direction:column;gap:4px;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 13px;cursor:pointer;color:var(--text);transition:.18s;position:relative}
+  .svc:hover{border-color:rgba(47,124,246,.6);transform:translateY(-1px)}
+  .svc.on{border-color:var(--ok);background:rgba(62,207,142,.09)}
+  .svc .t{font-size:13.5px;font-weight:600;line-height:1.3;padding-right:56px}
+  .svc .p{font-size:14px;font-weight:800;color:#fff}
+  .svc .add{position:absolute;right:10px;top:10px;font-size:11px;color:var(--accent2);font-weight:700}
+  .svc.on .add{color:var(--ok)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 26px 12px;flex:none}
+  .chip{border:1px solid rgba(47,124,246,.5);color:var(--accent2);background:rgba(47,124,246,.08);padding:9px 15px;border-radius:100px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.18s}
+  .chip:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .chip.ghost{border-color:rgba(255,255,255,.18);color:var(--muted);background:transparent}
+  .chip.ghost:hover{background:rgba(255,255,255,.08);color:#fff}
+  .chip.go{border-color:rgba(62,207,142,.5);color:var(--ok);background:rgba(62,207,142,.08)}
+  .chip.go:hover{background:var(--ok);color:#05210f}
+
+  .inbar{display:flex;gap:10px;padding:13px 22px;border-top:1px solid var(--line);background:var(--panel);flex:none}
+  .inbar input{flex:1;background:#0d1117;border:1px solid var(--line);border-radius:10px;padding:14px 16px;color:var(--text);font-size:15px}
+  .inbar input:focus{outline:none;border-color:var(--accent)}
+  .inbar button{background:var(--accent);border:none;color:#fff;border-radius:10px;padding:0 22px;font-weight:700;cursor:pointer;font-size:15px}
+
+  aside{display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+  .blk{border-bottom:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  .blk-h{padding:13px 18px 9px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .blk-h h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .blk-h .cnt{font-size:12px;color:var(--muted)}
+  .cart{flex:1;overflow-y:auto;padding:0 12px 8px;display:flex;flex-direction:column;gap:7px}
+  .cart-empty{color:#5d6673;font-size:12.5px;text-align:center;padding:16px 10px;line-height:1.5}
+  .ci{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-size:12.5px}
+  .ci-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .ci .n{flex:1;line-height:1.35;font-weight:600}
+  .ci .x{background:none;border:none;color:#6b7482;cursor:pointer;font-size:15px;line-height:1;padding:0}
+  .ci .x:hover{color:var(--bad)}
+  .ci-bot{display:flex;justify-content:space-between;align-items:center;margin-top:7px}
+  .qty{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .qty button{background:none;border:none;color:var(--muted);width:26px;height:26px;font-size:15px;cursor:pointer;line-height:1}
+  .qty button:hover{background:rgba(255,255,255,.07);color:#fff}
+  .qty span{min-width:24px;text-align:center;font-weight:700;color:#fff;font-size:12.5px}
+  .ci .sum{font-weight:800;font-size:13px}
+  .total{display:flex;justify-content:space-between;align-items:baseline;padding:11px 18px;border-top:1px solid var(--line);font-size:14px}
+  .total b{font-size:19px}
+  .cart-actions{display:flex;gap:8px;padding:0 12px 13px}
+  .btn{flex:1;border-radius:9px;padding:11px;font-weight:700;font-size:13.5px;cursor:pointer;border:1px solid transparent}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:#3d88ff}
+  .btn-ghost{background:transparent;border-color:var(--line);color:var(--muted)}
+  .btn-ghost:hover{color:#fff;border-color:rgba(255,255,255,.25)}
+  .leads{flex:0 0 auto;max-height:34%;overflow-y:auto;padding:0 12px 12px;display:flex;flex-direction:column;gap:7px}
+  .lead{background:rgba(62,207,142,.07);border:1px solid rgba(62,207,142,.35);border-radius:9px;padding:9px 11px;font-size:12.5px}
+  .lead b{display:block;font-size:13px;margin-bottom:3px}
+  .lead span{color:var(--muted);display:block;line-height:1.4}
+
+  /* ---------- админка ---------- */
+  #adminView{flex:1;display:none;flex-direction:column;min-height:0;background:var(--bg)}
+  #adminView.on{display:flex}
+  .admin-top{padding:18px 26px 12px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+  .admin-top h2{font-size:20px;margin-right:auto}
+  .seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .seg button{background:none;border:none;color:var(--muted);padding:7px 13px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer}
+  .seg button.on{background:var(--accent);color:#fff}
+  .search{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 13px;color:var(--text);font-size:13.5px;min-width:220px}
+  .search:focus{outline:none;border-color:var(--accent)}
+  .stats{display:flex;gap:26px;padding:14px 26px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .stat b{display:block;font-size:22px;line-height:1.2}
+  .stat span{font-size:12px;color:var(--muted)}
+  .admin-list{flex:1;overflow-y:auto;padding:18px 26px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;align-content:start}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px;display:flex;flex-direction:column;gap:10px}
+  .card.st-new{border-left:3px solid var(--accent)}
+  .card.st-work{border-left:3px solid var(--warn)}
+  .card.st-done{border-left:3px solid var(--ok);opacity:.75}
+  .card-h{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .card-h b{font-size:15px}
+  .card-h .when{font-size:12px;color:var(--muted);white-space:nowrap}
+  .card .ph{font-size:13px;color:var(--accent2);font-weight:600}
+  .items{font-size:12.5px;color:#c9d2e0;line-height:1.5}
+  .items div{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+  .card-f{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:9px;border-top:1px solid var(--line)}
+  .card-f .sum{font-weight:800}
+  .acts{display:flex;gap:6px}
+  .acts button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);border-radius:7px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer}
+  .acts button:hover{color:#fff;border-color:rgba(255,255,255,.25)}
+  .acts button.done:hover{color:var(--ok);border-color:rgba(62,207,142,.5)}
+  .acts button.del:hover{color:var(--bad);border-color:rgba(255,107,107,.5)}
+  .empty-admin{padding:60px 20px;text-align:center;color:#5d6673;font-size:14px;line-height:1.6}
+  .export{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer}
+  .export:hover{border-color:var(--accent);color:var(--accent2)}
+
+  @media(max-width:980px){#chatView{grid-template-columns:1fr}aside{display:none}.msg{max-width:90%}.svc-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><div class="mark">G</div><div>G. A. Motors<small>демо · приёмщик v3</small></div></div>
+  <div class="tabs">
+    <button class="tab on" id="tabChat" onclick="showView('chat')">Чат</button>
+    <button class="tab" id="tabAdmin" onclick="showView('admin')">Админка <span id="adminBadge"></span></button>
+  </div>
+  <div class="hdr-right">
+    <span class="badge">демо</span>
+    <span>ежедневно 08:00–22:00</span>
+    <span class="phone">+7 (966) 751-99-23</span>
+  </div>
+</header>
+
+<main id="chatView">
+  <section class="chat">
+    <div class="feed" id="feed"></div>
+    <div class="chips" id="chips"></div>
+    <form class="inbar" onsubmit="submitText(event)">
+      <input id="input" placeholder="Спросите про цену, время или запишитесь…" autocomplete="off">
+      <button type="submit">Отправить</button>
+    </form>
+  </section>
+
+  <aside>
+    <div class="blk" style="flex:1;min-height:0">
+      <div class="blk-h"><h3>Корзина</h3><span class="cnt" id="cartCount">пусто</span></div>
+      <div class="cart" id="cart"></div>
+      <div class="total"><span>Итого</span><b id="cartTotal">0 ₽</b></div>
+      <div class="cart-actions">
+        <button class="btn btn-primary" onclick="checkout()">Записаться</button>
+        <button class="btn btn-ghost" onclick="clearCart()">Очистить</button>
+      </div>
+    </div>
+    <div class="blk" style="max-height:34%;overflow:hidden">
+      <div class="blk-h"><h3>Заявки</h3><span class="cnt"><a href="#" onclick="showView('admin');return false" style="color:#61a3ff">все →</a></span></div>
+      <div class="leads" id="leads"></div>
+    </div>
+  </aside>
+</main>
+
+<section id="adminView">
+  <div class="admin-top">
+    <h2>Заявки из чата</h2>
+    <div class="seg" id="statusFilter">
+      <button class="on" data-f="all" onclick="setFilter('all')">Все</button>
+      <button data-f="new" onclick="setFilter('new')">Новые</button>
+      <button data-f="work" onclick="setFilter('work')">В работе</button>
+      <button data-f="done" onclick="setFilter('done')">Выполнены</button>
+    </div>
+    <input class="search" id="search" placeholder="Поиск по имени или телефону" oninput="renderAdmin()">
+    <button class="export" onclick="exportCsv()">Выгрузить CSV</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="stTotal">0</b><span>всего заявок</span></div>
+    <div class="stat"><b id="stNew">0</b><span>новых</span></div>
+    <div class="stat"><b id="stWork">0</b><span>в работе</span></div>
+    <div class="stat"><b id="stSum">0 ₽</b><span>сумма по заявкам</span></div>
+  </div>
+  <div class="admin-list" id="adminList"></div>
+</section>
+
+<script>
+/* ================= данные ================= */
+const COMPANY = {
+  name: 'G. A. Motors',
+  address: 'Санкт-Петербург, 8-я Советская улица, 4К',
+  hours: 'ежедневно с 08:00 до 22:00',
+  phone: '+7 (966) 751-99-23',
+  map: 'https://yandex.ru/maps/org/1758772875/'
+};
+
+const SERVICES = [
+  { id:'wash-carpet', cat:'Мойка', title:'Мойка и чистка ковров (комплект 4 шт.)', price:1000, unit:'компл.', keys:['ковр'],
+    desc:'Снимаем коврики, моем, сушим. Комплект — 4 штуки.' },
+  { id:'wash-lux', cat:'Мойка', title:'Комплексная мойка «Люкс»', price:1650, unit:'авто', keys:['мойк','люкс','комплекс'],
+    desc:'Контактная мойка кузова, пылесос салона, пластик, багажник, стёкла, сушка.' },
+  { id:'polish-head', cat:'Полировка', title:'Полировка фар', price:1000, unit:'пара', keys:['фар'],
+    desc:'Убираем помутнение и желтизну, восстанавливаем прозрачность.' },
+  { id:'polish-body', cat:'Полировка', title:'Полировка кузова', price:20000, unit:'авто', keys:['полиров','кузов'],
+    desc:'Абразивная полировка: убирает мелкие царапины и матовость лака.' },
+  { id:'wax', cat:'Обработка', title:'Обработка твёрдым воском', price:10000, unit:'авто', keys:['воск'],
+    desc:'Защитный слой на кузов: грязь сходит легче, блеск держится дольше.' },
+  { id:'chem-salon', cat:'Химчистка', title:'Химчистка салона (комплексная)', price:5000, unit:'авто', keys:['химчист','салон'],
+    desc:'Кресла, диван, потолок, пластик. Снимаем загрязнения и запахи.' },
+  { id:'chem-trunk', cat:'Химчистка', title:'Химчистка багажника', price:1000, unit:'авто', keys:['багажник'],
+    desc:'Отдельная уборка багажного отделения и обшивки.' },
+  { id:'ac', cat:'Кондиционер', title:'Заправка кондиционера', price:2000, unit:'авто', keys:['кондицион','заправ'],
+    desc:'Проверяем давление, дозаправляем фреон, тестируем холод.' },
+  { id:'weld', cat:'Сварка', title:'Аргонная сварка', price:1000, unit:'шт.', keys:['сварк','аргон'],
+    desc:'Аргоновая сварка металла: глушитель, крепления, кронштейны.' }
+];
+
+const CATS = [...new Set(SERVICES.map(s => s.cat))];
+const money = n => n.toLocaleString('ru-RU') + ' ₽';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const svc = id => SERVICES.find(s => s.id === id);
+const LEADS_KEY = 'ga_motors_leads_v3';
+
+/* ================= состояние ================= */
+const feed = document.getElementById('feed');
+const chipsEl = document.getElementById('chips');
+const cartEl = document.getElementById('cart');
+const leadsEl = document.getElementById('leads');
+
+let cart = [];              // [{id, qty}]
+let history = [];
+let expected = null;
+let booking = {};
+let filter = 'all';
+
+let leads = [];
+try { leads = JSON.parse(localStorage.getItem(LEADS_KEY) || '[]'); } catch (e) { leads = []; }
+const saveLeads = () => { try { localStorage.setItem(LEADS_KEY, JSON.stringify(leads)); } catch (e) {} };
+
+const today = new Date();
+const DATES = [0,1,2].map(i => {
+  const d = new Date(today.getTime() + i * 86400000);
+  const label = d.toLocaleDateString('ru-RU', { day:'2-digit', month:'2-digit' });
+  return { label: label + (i===0 ? ' (сегодня)' : i===1 ? ' (завтра)' : ''), value: label };
+});
+const TIMES = ['09:00','11:00','13:00','15:00','17:00','19:00'];
+
+/* ================= вывод в чат ================= */
+function add(role, html, isHtml) {
+  const d = document.createElement('div');
+  d.className = 'msg ' + role;
+  if (isHtml) d.innerHTML = html; else d.textContent = html;
+  feed.appendChild(d);
+  feed.scrollTop = feed.scrollHeight;
+  return d;
+}
+const bot = h => add('bot', h, true);
+const me = t => add('me', t, false);
+const sys = t => add('sys', t, false);
+
+function chips(list) {
+  chipsEl.innerHTML = '';
+  list.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'chip ' + (c.kind || '');
+    b.textContent = c.label;
+    b.onclick = c.act;
+    chipsEl.appendChild(b);
+  });
+  if (history.length > 1) {
+    const back = document.createElement('button');
+    back.className = 'chip ghost';
+    back.textContent = '← Назад';
+    back.onclick = goBack;
+    chipsEl.appendChild(back);
+  }
+}
+
+/* ================= корзина ================= */
+const cartTotal = () => cart.reduce((s, c) => s + svc(c.id).price * c.qty, 0);
+const cartCount = () => cart.reduce((s, c) => s + c.qty, 0);
+
+function renderCart() {
+  document.getElementById('cartTotal').textContent = money(cartTotal());
+  document.getElementById('cartCount').textContent = cart.length ? cartCount() + ' шт.' : 'пусто';
+
+  if (!cart.length) {
+    cartEl.innerHTML = '<div class="cart-empty">Выберите услуги в чате — они появятся здесь. Количество можно менять.</div>';
+    refreshServiceButtons();
+    return;
+  }
+  cartEl.innerHTML = cart.map(c => {
+    const s = svc(c.id);
+    return `<div class="ci">
+      <div class="ci-top"><span class="n">${esc(s.title)}</span>
+        <button class="x" title="Убрать" onclick="removeItem('${c.id}')">×</button></div>
+      <div class="ci-bot">
+        <div class="qty">
+          <button onclick="decItem('${c.id}')">−</button><span>${c.qty}</span><button onclick="incItem('${c.id}')">+</button>
+        </div>
+        <span class="sum">${money(s.price * c.qty)}</span>
+      </div></div>`;
+  }).join('');
+  refreshServiceButtons();
+}
+
+function addItem(id) {
+  const line = cart.find(c => c.id === id);
+  if (line) line.qty++;
+  else cart.push({ id, qty: 1 });
+  sys('Добавил: ' + svc(id).title + ' — ' + money(svc(id).price));
+  renderCart();
+}
+function incItem(id) { const l = cart.find(c => c.id === id); if (l) { l.qty = Math.min(99, l.qty + 1); renderCart(); } }
+function decItem(id) {
+  const l = cart.find(c => c.id === id);
+  if (!l) return;
+  l.qty--;
+  if (l.qty <= 0) cart = cart.filter(c => c.id !== id);
+  renderCart();
+}
+function removeItem(id) {
+  cart = cart.filter(c => c.id !== id);
+  sys('Убрал: ' + svc(id).title);
+  renderCart();
+}
+function clearCart() {
+  if (!cart.length) { sys('Корзина уже пустая.'); return; }
+  cart = []; renderCart(); sys('Корзина очищена.');
+}
+function refreshServiceButtons() {
+  document.querySelectorAll('.svc').forEach(b => {
+    const line = cart.find(c => c.id === b.dataset.id);
+    b.classList.toggle('on', !!line);
+    const a = b.querySelector('.add');
+    if (a) a.textContent = line ? (line.qty > 1 ? '✓ ×' + line.qty : '✓ в чеке') : '+ добавить';
+  });
+}
+const toggleService = id => cart.some(c => c.id === id) ? removeItem(id) : addItem(id);
+
+/* ================= навигация ================= */
+function go(name, payload) { history.push({ name, payload }); renderScreen(name, payload); }
+function goBack() {
+  if (history.length > 1) history.pop();
+  const prev = history[history.length - 1] || { name: 'main' };
+  expected = null;
+  bot('Хорошо, вернулись назад.');
+  renderScreen(prev.name, prev.payload, true);
+}
+
+function renderScreen(name, payload) {
+  expected = null;
+  switch (name) {
+    case 'main':
+      bot('Что подсказать? Могу показать цены, собрать чек или записать вас.');
+      chips([
+        { label:'Услуги и цены', act:() => go('cats') },
+        { label:'Записаться', act:checkout },
+        { label:'Адрес и время', act:() => go('info') },
+        { label:'Позвать человека', act:escalate }
+      ]);
+      break;
+
+    case 'cats':
+      bot('Выберите раздел — покажу услуги с точными ценами. Нажмите на услугу, чтобы добавить в корзину.');
+      chips([...CATS.map(c => ({ label:c, act:() => go('cat', c) })), { label:'Показать всё', act:() => go('all') }]);
+      break;
+
+    case 'all':
+      bot('Весь прайс. Нажмите на услугу — она уйдёт в корзину, количество можно менять справа.');
+      botServices(SERVICES);
+      chips([{ label:'Оформить', kind:'go', act:checkout }, { label:'По разделам', act:() => go('cats') }]);
+      break;
+
+    case 'cat': {
+      const items = SERVICES.filter(s => s.cat === payload);
+      bot(`Раздел «${esc(payload)}» — нажмите на услугу, чтобы добавить.`);
+      botServices(items);
+      chips([{ label:'Другой раздел', act:() => go('cats') }, { label:'Оформить', kind:'go', act:checkout }]);
+      break;
+    }
+
+    case 'service': {
+      const s = svc(payload);
+      const line = cart.find(c => c.id === s.id);
+      bot(`<b>${esc(s.title)}</b><br>${esc(s.desc)}<br><br><b>${money(s.price)}</b> / ${esc(s.unit)} · ${esc(s.cat)}` +
+          (line ? `<br><span style="color:#3ecf8e">В корзине: ${line.qty} шт.</span>` : ''));
+      chips([
+        { label: line ? 'Ещё одну' : 'Добавить в корзину', kind:'go', act:() => { addItem(s.id); go('service', s.id); } },
+        { label:'Все услуги раздела', act:() => go('cat', s.cat) },
+        { label:'Оформить', kind:'go', act:checkout }
+      ]);
+      break;
+    }
+
+    case 'info':
+      bot(`<b>${COMPANY.name}</b><br>${COMPANY.address}<br>Работаем ${COMPANY.hours}.<br><br>` +
+          `Телефон: ${COMPANY.phone}<br><a href="${COMPANY.map}" target="_blank" style="color:#61a3ff">Открыть на карте →</a><br><br>` +
+          `Приехать можно без записи, но с записью — без ожидания.`);
+      chips([{ label:'Услуги', act:() => go('cats') }, { label:'Записаться', kind:'go', act:checkout }]);
+      break;
+
+    case 'date':
+      bot(cart.length ? 'Корзина собрана. На какую дату записать?' : 'На какую дату записать?');
+      chips([
+        ...DATES.map(d => ({ label:d.label, act:() => { booking.date = d.label; go('time'); } })),
+        { label:'Сначала выберу услуги', act:() => go('cats') }
+      ]);
+      break;
+
+    case 'time':
+      bot(`Записал на ${esc(booking.date)}. Во сколько удобно? Работаем ${COMPANY.hours}.`);
+      chips([
+        ...TIMES.map(t => ({ label:t, act:() => { booking.time = t; go('name'); } })),
+        { label:'Другая дата', act:() => go('date') }
+      ]);
+      break;
+
+    case 'name':
+      expected = 'name';
+      bot('Как вас зовут?');
+      chips([{ label:'Пропустить', kind:'ghost', act:() => { booking.name = 'не указано'; go('phone'); } }]);
+      break;
+
+    case 'phone':
+      expected = 'phone';
+      bot('И номер телефона — мастер подтвердит запись.');
+      chips([{ label:'Не хочу оставлять номер', kind:'ghost', act:escalate }]);
+      break;
+
+    case 'done':
+      bot(`Готово ✅<br><br><b>Записал:</b><br>${receiptHtml()}` +
+          `<b>Дата:</b> ${esc(booking.date || '—')} · <b>Время:</b> ${esc(booking.time || '—')}<br>` +
+          `<b>Имя:</b> ${esc(booking.name || '—')}<br><b>Телефон:</b> ${esc(booking.phone || '—')}<br><br>` +
+          `Подтверждение придёт в течение 5 минут.<br><span style="color:#98a2b3;font-size:13px">Цена зафиксирована — на месте доплат не будет.</span>`);
+      chips([{ label:'Ещё вопрос', act:() => go('main') }, { label:'Открыть админку', act:() => showView('admin') }]);
+      break;
+  }
+}
+
+function botServices(list) {
+  const wrap = document.createElement('div');
+  wrap.className = 'svc-grid';
+  list.forEach(s => {
+    const line = cart.find(c => c.id === s.id);
+    const b = document.createElement('button');
+    b.className = 'svc' + (line ? ' on' : '');
+    b.dataset.id = s.id;
+    b.innerHTML = `<span class="add">${line ? (line.qty > 1 ? '✓ ×' + line.qty : '✓ в чеке') : '+ добавить'}</span>
+      <span class="t">${esc(s.title)}</span><span class="p">${money(s.price)} <span style="font-size:11px;color:#98a2b3;font-weight:500">/ ${esc(s.unit)}</span></span>`;
+    b.onclick = () => addItem(s.id);
+    b.oncontextmenu = e => { e.preventDefault(); go('service', s.id); };
+    wrap.appendChild(b);
+  });
+  feed.appendChild(wrap);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function receiptHtml() {
+  if (!cart.length) return '<i>услуги не выбраны</i><br><br>';
+  return cart.map(c => {
+    const s = svc(c.id);
+    return `<div class="price-line"><span>${esc(s.title)}${c.qty > 1 ? ' × ' + c.qty : ''}</span><span>${money(s.price * c.qty)}</span></div>`;
+  }).join('') +
+  `<div class="price-line" style="border-top:1px solid rgba(255,255,255,.15);margin-top:4px;padding-top:7px"><span><b>Итого</b></span><span>${money(cartTotal())}</span></div><br>`;
+}
+
+/* ================= действия ================= */
+function checkout() {
+  if (!cart.length) {
+    bot('Корзина пока пустая — выберите услуги, и я запишу вас с готовым списком.');
+    go('cats');
+    return;
+  }
+  bot('Отлично, вот ваш чек:<br><br>' + receiptHtml() + 'На какую дату записать?');
+  go('date');
+}
+
+function escalate() {
+  bot('Передал вопрос живому мастеру — он ответит в этом чате или позвонит.<br><br>Если срочно: <b>' + COMPANY.phone + '</b>');
+  chips([{ label:'В меню', act:() => go('main') }]);
+}
+
+function finish() {
+  const lead = {
+    id: 'L' + Date.now(),
+    name: booking.name || 'не указано',
+    phone: booking.phone || '—',
+    date: booking.date || '—',
+    time: booking.time || '—',
+    items: cart.map(c => ({ title: svc(c.id).title, price: svc(c.id).price, qty: c.qty })),
+    total: cartTotal(),
+    status: 'new',
+    created: new Date().toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })
+  };
+  leads.unshift(lead);
+  saveLeads();
+  renderLeads();
+  updateAdminBadge();
+  go('done');
+  booking = {};
+  cart = [];
+  renderCart();
+}
+
+/* ================= админка ================= */
+function showView(v) {
+  document.getElementById('chatView').style.display = v === 'chat' ? 'grid' : 'none';
+  document.getElementById('adminView').classList.toggle('on', v === 'admin');
+  document.getElementById('tabChat').classList.toggle('on', v === 'chat');
+  document.getElementById('tabAdmin').classList.toggle('on', v === 'admin');
+  if (v === 'admin') renderAdmin();
+}
+
+function setFilter(f) {
+  filter = f;
+  document.querySelectorAll('#statusFilter button').forEach(b => b.classList.toggle('on', b.dataset.f === f));
+  renderAdmin();
+}
+
+function renderAdmin() {
+  const q = (document.getElementById('search').value || '').toLowerCase().trim();
+  const list = leads.filter(l =>
+    (filter === 'all' || l.status === filter) &&
+    (!q || l.name.toLowerCase().includes(q) || String(l.phone).toLowerCase().includes(q))
+  );
+
+  document.getElementById('stTotal').textContent = leads.length;
+  document.getElementById('stNew').textContent = leads.filter(l => l.status === 'new').length;
+  document.getElementById('stWork').textContent = leads.filter(l => l.status === 'work').length;
+  document.getElementById('stSum').textContent = money(leads.reduce((s, l) => s + (l.total || 0), 0));
+
+  const box = document.getElementById('adminList');
+  if (!list.length) {
+    box.innerHTML = '<div class="empty-admin">Пока нет заявок.<br>Оформите запись в чате — она появится здесь.</div>';
+    return;
+  }
+  box.innerHTML = list.map(l => `
+    <div class="card st-${l.status}">
+      <div class="card-h"><b>${esc(l.name)}</b><span class="when">${esc(l.created)}</span></div>
+      <div class="ph">${esc(l.phone)}</div>
+      <div class="items">${(l.items || []).map(i => `<div><span>${esc(i.title)}${i.qty > 1 ? ' × ' + i.qty : ''}</span><span>${money(i.price * i.qty)}</span></div>`).join('')}</div>
+      <div class="card-f">
+        <span class="sum">${money(l.total || 0)}</span>
+        <div class="acts">
+          ${l.status !== 'work' ? `<button onclick="setStatus('${l.id}','work')">В работу</button>` : ''}
+          ${l.status !== 'done' ? `<button class="done" onclick="setStatus('${l.id}','done')">Выполнено</button>` : ''}
+          <button class="del" onclick="delLead('${l.id}')">Удалить</button>
+        </div>
+      </div>
+      <div class="card-h"><span class="when">Запись: ${esc(l.date)} ${esc(l.time)}</span></div>
+    </div>`).join('');
+}
+
+function setStatus(id, st) {
+  const l = leads.find(x => x.id === id);
+  if (l) { l.status = st; saveLeads(); renderAdmin(); renderLeads(); updateAdminBadge(); }
+}
+function delLead(id) {
+  leads = leads.filter(x => x.id !== id);
+  saveLeads(); renderAdmin(); renderLeads(); updateAdminBadge();
+}
+
+function renderLeads() {
+  const cnt = document.getElementById('leadCount');
+  if (cnt) cnt.textContent = leads.length;
+  if (!leads.length) { leadsEl.innerHTML = '<div class="cart-empty">Пока пусто.</div>'; return; }
+  leadsEl.innerHTML = leads.slice(0, 5).map(l =>
+    `<div class="lead"><b>${esc(l.name)} · ${esc(l.phone)}</b>
+     <span>${esc(l.date)} ${esc(l.time)} · ${money(l.total || 0)}</span></div>`).join('');
+}
+
+function updateAdminBadge() {
+  const n = leads.filter(l => l.status === 'new').length;
+  document.getElementById('adminBadge').textContent = n ? '· ' + n : '';
+}
+
+function exportCsv() {
+  const rows = [['Дата','Имя','Телефон','Услуги','Сумма','Статус','Запись']];
+  leads.forEach(l => rows.push([
+    l.created, l.name, l.phone,
+    (l.items || []).map(i => i.title + (i.qty > 1 ? ' x' + i.qty : '')).join('; '),
+    l.total, l.status, l.date + ' ' + l.time
+  ]));
+  const csv = '\uFEFF' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'zayavki-ga-motors.csv';
+  a.click();
+}
+
+/* ================= ввод ================= */
+function submitText(e) {
+  e.preventDefault();
+  const inp = document.getElementById('input');
+  const v = inp.value.trim();
+  if (!v) return;
+  inp.value = '';
+  me(v);
+  handle(v);
+}
+
+function handle(raw) {
+  const t = raw.toLowerCase().trim();
+
+  if (expected === 'name') { booking.name = raw.trim(); go('phone'); return; }
+  if (expected === 'phone') {
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length < 10) { bot('В номере не хватает цифр. Попробуйте ещё раз — например, +7 966 751-99-23.'); return; }
+    booking.phone = raw.trim();
+    finish();
+    return;
+  }
+
+  if (/^(назад|вернуться|отмена)/.test(t)) { goBack(); return; }
+  if (/привет|здравствуй|добрый (день|вечер)|хай/.test(t)) {
+    bot('Здравствуйте! Я приёмщик ' + COMPANY.name + '. Покажу цены, соберу корзину и запишу без звонков.');
+    go('main'); return;
+  }
+  if (/бот|робот/.test(t) && !/человек|оператор/.test(t)) {
+    bot('Да, я автоматический приёмщик. Нужен человек — скажите «позвать человека».');
+    chips([{ label:'Позвать человека', act:escalate }, { label:'В меню', act:() => go('main') }]);
+    return;
+  }
+  if (/человек|оператор|мастер|менеджер|жалоб|претензи/.test(t)) { escalate(); return; }
+  if (/адрес|где вы|как добраться|находит|маршрут|карт/.test(t)) { go('info'); return; }
+  if (/время|часы|работает|открыт|во сколько|выходн/.test(t)) {
+    bot('Работаем ' + COMPANY.hours + '. Запись — на любой свободный слот.');
+    chips([{ label:'Записаться', kind:'go', act:checkout }, { label:'Цены', act:() => go('cats') }]);
+    return;
+  }
+  if (/телефон|номер|позвон/.test(t)) {
+    bot('Телефон: <b>' + COMPANY.phone + '</b><br>Но проще записаться здесь — заявка придёт сразу мастеру.');
+    chips([{ label:'Записаться', kind:'go', act:checkout }]);
+    return;
+  }
+  if (/сколько (по )?врем|долго|займёт|займет/.test(t)) {
+    bot('Мойка — около 40–60 минут, химчистка салона — 2–4 часа, полировка кузова — от 3 часов. Точнее мастер скажет после осмотра.');
+    chips([{ label:'Услуги', act:() => go('cats') }, { label:'Записаться', kind:'go', act:checkout }]);
+    return;
+  }
+  if (/оплат|карт|наличн|перевод|qr/.test(t)) {
+    bot('По способам оплаты уточню у администратора — передам вопрос мастеру, чтобы не сказать лишнего.');
+    chips([{ label:'Позвать человека', act:escalate }]);
+    return;
+  }
+  if (/скидк|акци|промокод|дешевл/.test(t)) {
+    bot('Про скидки лучше уточнить у администратора — не хочу назвать неверную цифру. Передам мастеру.');
+    chips([{ label:'Позвать человека', act:escalate }, { label:'Цены', act:() => go('cats') }]);
+    return;
+  }
+  if (/дорого|цена высок/.test(t)) {
+    bot('Понимаю. Важное: цена фиксируется до начала работ — как посчитали здесь, так и будет. Если бюджет ограничен, можно проще: мойка «Люкс» — 1 650 ₽ вместо комплекса с химчисткой за 5 000 ₽.');
+    chips([{ label:'Прайс', act:() => go('all') }, { label:'Записаться', kind:'go', act:checkout }]);
+    return;
+  }
+  if (/чек|корзин|итог|сколько всего|сумм/.test(t)) {
+    bot(cart.length ? 'Ваш чек:<br><br>' + receiptHtml() : 'Корзина пустая. Выберите услуги — сложу сумму.');
+    chips(cart.length ? [{ label:'Записаться', kind:'go', act:checkout }] : [{ label:'Услуги', act:() => go('cats') }]);
+    return;
+  }
+  if (/очист|сброс|убрать всё|убрать все/.test(t)) { clearCart(); return; }
+  if (/запис|брон|свободн|когда можно|приехать/.test(t)) { checkout(); return; }
+  if (/спасибо|благодар|пока/.test(t)) {
+    bot('Пожалуйста! Я на связи круглосуточно, мастера работают ' + COMPANY.hours + '.');
+    chips([{ label:'В меню', act:() => go('main') }]);
+    return;
+  }
+
+  const found = SERVICES.filter(s =>
+    s.keys.some(k => t.includes(k)) || s.title.toLowerCase().includes(t) || t.includes(s.cat.toLowerCase()));
+  if (found.length === 1) { go('service', found[0].id); return; }
+  if (found.length > 1) {
+    bot('Нашёл подходящие услуги — нажмите, чтобы добавить.');
+    botServices(found);
+    chips([{ label:'Показать всё', act:() => go('all') }]);
+    return;
+  }
+  if (/цен|стоит|сколько|прайс|почём|почем/.test(t)) { go('cats'); return; }
+
+  bot('Не уверен, что понял. Могу показать цены, собрать корзину или записать. Если вопрос сложный — позову мастера.');
+  chips([
+    { label:'Услуги и цены', act:() => go('cats') },
+    { label:'Записаться', kind:'go', act:checkout },
+    { label:'Позвать человека', act:escalate }
+  ]);
+}
+
+/* ================= старт ================= */
+renderCart();
+renderLeads();
+updateAdminBadge();
+bot('Здравствуйте! Это демо ИИ-приёмщика ' + COMPANY.name + '.');
+bot('Могу назвать точные цены, собрать корзину с количеством и записать вас. Нажмите на услугу — увидите, как считается сумма. Вверху есть переключатель «Админка».');
+history = [{ name:'main' }];
+go('main');
+</script>
+</body>
+</html>
+
